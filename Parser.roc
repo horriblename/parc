@@ -38,10 +38,20 @@ expect
     parser = map oneParser \x -> x + 2
     run parser [1] == Ok 3
 
-try : Parser i o1, ((i, o1) -> PResult i o2) -> Parser i o2
+try : Parser i o1, (o1 -> Result o2 Problem) -> Parser i o2
 try = \parser, f ->
     \input ->
-        parser input |> Result.try f
+        parser input
+            |> Result.try \(rest, o1) -> 
+                f o1 |> Result.map \o2 -> (rest, o2)
+
+expect
+    parser = try oneParser (\o1 -> Ok (o1 + 1)) 
+    run parser [1, 0] == Ok 2
+
+expect
+    parser = try oneParser (\_ -> Err genericError)
+    run parser [1, 0] == Err genericError
 
 ## for testing only
 oneParser = \input ->

@@ -1,6 +1,6 @@
 interface Parser
     exposes [Parser, Problem, PResult, map, try, run, complete, genericError]
-    imports [Bool.{true, false}, Util]
+    imports [Bool.{true, false}]
 
 Problem : [Failure [NoMatch]]
 PResult i o : Result (i, o) Problem
@@ -13,7 +13,7 @@ run = \parser, input ->
     parser input
         |> Result.map \(_, out) -> out
 
-expect run oneParser [1, 2] |> Util.andEq 1
+expect run oneParser [1, 2] == Ok 1
 
 ## Run a parser against a given `List` input.
 ## Returns the result of the parser,

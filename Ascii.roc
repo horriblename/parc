@@ -1,5 +1,5 @@
 interface Ascii
-    exposes [StrBuf, char, isDigit, int, ]
+    exposes [StrBuf, char, isDigit, int, charIs]
     imports [Parser.{Parser}]
 
 StrBuf : List U8
@@ -12,6 +12,12 @@ char = \c -> \input ->
 
 expect Parser.run (char 'a') ['a'] == Ok 'a'
 expect Parser.run (char 'a') ['b'] == Err Parser.genericError
+
+charIs : (U8 -> Bool) -> Parser StrBuf U8
+charIs = \pred -> \input ->
+    when input is
+        [head, .. as rest] if pred head -> Ok (rest, head)
+        _ -> Err Parser.genericError
 
 isDigit : U8 -> Bool
 isDigit = \c -> c >= '0' && c <= '9'

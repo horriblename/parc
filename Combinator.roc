@@ -9,7 +9,7 @@ interface Combinator
         suffixed,
         andThen,
      ]
-    imports [Parser.{Parser}, Util]
+    imports [Parser.{Parser}]
 
 alt : List (Parser i o) -> Parser i o
 alt = \parsers ->
@@ -59,8 +59,8 @@ matches = \token ->
             [tok, .. as rest] if tok == token -> Ok (rest, tok)
             _ -> Err Parser.genericError
 
-expect Parser.run (matches 0) [0, 1, 2] |> Util.andEq 0
-expect Parser.run (matches 1) [0] |> Result.isErr
+expect Parser.run (matches 0) [0, 1, 2] == Ok 0
+expect Parser.run (matches 1) [0] == Err Parser.genericError
 
 surrounded : Parser i *, Parser i o, Parser i * -> Parser i o
 surrounded = \left, token, right ->
@@ -77,7 +77,7 @@ zero = matches 0
 
 expect
     parser = surrounded one zero one  
-    Parser.run parser [1, 0, 1] |> Util.andEq 0
+    Parser.run parser [1, 0, 1] == Ok 0
 
 prefixed : Parser i *, Parser i o -> Parser i o
 prefixed = \prefix, token ->

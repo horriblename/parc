@@ -1,6 +1,7 @@
 interface Combinator
     exposes [
         matches,
+        passes,
         alt,
         many,
         many0,
@@ -8,8 +9,8 @@ interface Combinator
         prefixed,
         suffixed,
         andThen,
-     ]
-    imports [Parser.{Parser}]
+    ]
+    imports [Parser.{ Parser }]
 
 alt : List (Parser i o) -> Parser i o
 alt = \parsers ->
@@ -51,8 +52,7 @@ many0 = \parser ->
 ## and succeeds if the first token in the input is equal to the given `token`
 ##
 ## consumes the matched token
-matches : o -> Parser (List o) o
-    where o implements Eq
+matches : o -> Parser (List o) o where o implements Eq
 matches = \token ->
     \input ->
         when input is
@@ -61,6 +61,13 @@ matches = \token ->
 
 expect Parser.run (matches 0) [0, 1, 2] == Ok 0
 expect Parser.run (matches 1) [0] == Err Parser.genericError
+
+passes : (o -> Bool) -> Parser (List o) o
+passes = \pred ->
+    \input ->
+        when input is
+            [tok, .. as rest] if pred tok -> Ok (rest, tok)
+            _ -> Err Parser.genericError
 
 surrounded : Parser i *, Parser i o, Parser i * -> Parser i o
 surrounded = \left, token, right ->
@@ -76,7 +83,7 @@ one = matches 1
 zero = matches 0
 
 expect
-    parser = surrounded one zero one  
+    parser = surrounded one zero one
     Parser.run parser [1, 0, 1] == Ok 0
 
 prefixed : Parser i *, Parser i o -> Parser i o
@@ -94,7 +101,7 @@ suffixed = \token, suffix ->
 
 andThen : Parser i o1, Parser i o2 -> Parser i (o1, o2)
 andThen = \parser1, parser2 -> \input ->
-    (rest1, out1) <- Result.try (parser1 input)
-    (rest2, out2) <- Result.map (parser2 rest1)
+        (rest1, out1) <- Result.try (parser1 input)
+        (rest2, out2) <- Result.map (parser2 rest1)
 
-    (rest2, (out1, out2))
+        (rest2, (out1, out2))

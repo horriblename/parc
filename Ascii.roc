@@ -1,23 +1,23 @@
 interface Ascii
-    exposes [StrBuf, char, isDigit, int, charIs]
-    imports [Parser.{Parser}]
+    exposes [StrBuf, char, isDigit, int, charIs, tag]
+    imports [Parser.{ Parser }]
 
 StrBuf : List U8
 
 char : U8 -> Parser StrBuf U8
 char = \c -> \input ->
-    when input is
-        [head, .. as rest] if head == c -> Ok (rest, head)
-        _ -> Err Parser.genericError
+        when input is
+            [head, .. as rest] if head == c -> Ok (rest, head)
+            _ -> Err Parser.genericError
 
 expect Parser.run (char 'a') ['a'] == Ok 'a'
 expect Parser.run (char 'a') ['b'] == Err Parser.genericError
 
 charIs : (U8 -> Bool) -> Parser StrBuf U8
 charIs = \pred -> \input ->
-    when input is
-        [head, .. as rest] if pred head -> Ok (rest, head)
-        _ -> Err Parser.genericError
+        when input is
+            [head, .. as rest] if pred head -> Ok (rest, head)
+            _ -> Err Parser.genericError
 
 isDigit : U8 -> Bool
 isDigit = \c -> c >= '0' && c <= '9'
@@ -44,7 +44,7 @@ int = \input ->
     if i == 0 then
         Err Parser.genericError
     else
-        {before: num, others} = List.split input i
+        { before: num, others } = List.split input i
         Ok (others, num)
 
 ## returns the first index where the predicate returns true
@@ -53,4 +53,23 @@ firstIndex = \list, pred ->
         if pred item then
             Break i
         else
-            Continue (i+1)
+            Continue (i + 1)
+
+tag : Str -> Parser StrBuf StrBuf
+tag = \str ->
+    strBuf = Str.toUtf8 str
+    \input ->
+        result = List.walkWithIndexUntil strBuf Matches \_, c, i ->
+            when List.get input i is
+                Ok cInput if cInput == c -> Continue Matches
+                _ -> Break NoMatch
+
+        when result is
+            Matches ->
+                { before: token, others } = List.split input (List.len strBuf)
+                Ok (others, token)
+
+            NoMatch -> Err Parser.genericError
+
+expect Parser.run (tag "hello") (Str.toUtf8 "hello world") == Ok (Str.toUtf8 "hello")
+expect Parser.run (tag "hello") (Str.toUtf8 "hell world") |> Result.isErr

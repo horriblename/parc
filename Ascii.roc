@@ -1,5 +1,5 @@
 interface Ascii
-    exposes [StrBuf, char, isDigit, int, charIs, tag]
+    exposes [StrBuf, char, isDigit, int, charIs, tag, isWhitespace]
     imports [Parser.{ Parser }]
 
 StrBuf : List U8
@@ -73,3 +73,22 @@ tag = \str ->
 
 expect Parser.run (tag "hello") (Str.toUtf8 "hello world") == Ok (Str.toUtf8 "hello")
 expect Parser.run (tag "hello") (Str.toUtf8 "hell world") |> Result.isErr
+
+isWhitespace = \c ->
+    when c is
+        0x0020 | 0x000A | 0x000D | 0x0009 -> Bool.true
+        _ -> Bool.false
+
+skipWhitespaces = \input ->
+    count =
+        input
+        |> List.walkUntil 0 \i, c ->
+            if isWhitespace c then
+                Continue (i + 1)
+            else
+                Break i
+
+    rest = List.dropFirst input count
+    Ok (rest, {})
+
+expect skipWhitespaces (Str.toUtf8 "  \t\nhi") == Ok (['h', 'i'], {})

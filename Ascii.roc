@@ -1,5 +1,5 @@
 interface Ascii
-    exposes [StrBuf, char, isDigit, int, charIs, tag, isWhitespace]
+    exposes [StrBuf, char, isDigit, isAlpha, int, charIs, tag, isWhitespace]
     imports [Parser.{ Parser }]
 
 StrBuf : List U8
@@ -21,6 +21,9 @@ charIs = \pred -> \input ->
 
 isDigit : U8 -> Bool
 isDigit = \c -> c >= '0' && c <= '9'
+
+isAlpha : U8 -> Bool
+isAlpha = \c -> (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')
 
 i32 : Parser StrBuf I32
 i32 = \input ->

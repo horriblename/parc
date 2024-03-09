@@ -9,6 +9,7 @@ interface Combinator
         prefixed,
         suffixed,
         andThen,
+        postTest,
     ]
     imports [Parser.{ Parser }]
 
@@ -105,3 +106,12 @@ andThen = \parser1, parser2 -> \input ->
         (rest2, out2) <- Result.map (parser2 rest1)
 
         (rest2, (out1, out2))
+
+postTest : Parser i o, (i, o -> Bool) -> Parser i o
+postTest = \parser, pred ->
+    \input ->
+        (rest, out) <- Result.try (parser input)
+        if pred rest out then
+            Ok (rest, out)
+        else
+            Err Parser.genericError

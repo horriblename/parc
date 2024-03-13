@@ -3,6 +3,7 @@ interface Combinator
         matches,
         passes,
         alt,
+        opt,
         many,
         many0,
         surrounded,
@@ -26,6 +27,15 @@ alt = \parsers ->
         when maybeOut is
             Nothing -> Err Parser.genericError
             Just out -> Ok (rest, out)
+
+opt : Parser i o -> Parser i [NotFound, Match o]
+opt = \parser -> \input ->
+        parser input
+        |> Result.map \(rest, out) -> (rest, Match out)
+        |> Result.onErr \_ -> Ok (input, NotFound)
+
+expect Parser.run (opt one) [1, 0, 1] == Ok (Match 1)
+expect Parser.run (opt one) [0, 0, 1] == Ok NotFound
 
 many : Parser i o -> Parser i (List o)
 many = \parser ->

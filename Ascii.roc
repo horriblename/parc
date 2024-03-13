@@ -1,5 +1,5 @@
 interface Ascii
-    exposes [StrBuf, char, isDigit, isAlpha, int, charIs, tag, isWhitespace]
+    exposes [StrBuf, char, isDigit, isAlpha, int, charIs, tag, isWhitespace, until, until0]
     imports [Parser.{ Parser }]
 
 StrBuf : List U8
@@ -18,6 +18,43 @@ charIs = \pred -> \input ->
         when input is
             [head, .. as rest] if pred head -> Ok (rest, head)
             _ -> Err Parser.genericError
+
+## Matches until before the first element that *fulfill* the predicate
+## Note that this parser cannot fail.
+until0 : (i -> Bool) -> Parser (List i) (List i)
+until0 = \pred -> \input ->
+        count =
+            input
+            |> List.walkUntil 0 \i, c ->
+                if !(pred c) then
+                    Continue (i + 1)
+                else
+                    Break i
+
+        { before, others } = List.split input count
+        Ok (others, before)
+
+expect Parser.run (until0 isDigit) ['a', 'b', '3'] == Ok ['a', 'b']
+expect Parser.run (until0 isDigit) ['3', 'b'] == Ok []
+
+until = \pred -> \input ->
+        count =
+            input
+            |> List.walkUntil 0 \i, c ->
+                if !(pred c) then
+                    Continue (i + 1)
+                else
+                    Break i
+
+        when input is
+            [first, ..] if !(pred first) ->
+                { before, others } = List.split input count
+                Ok (others, before)
+
+            _ -> Err Parser.genericError
+
+expect Parser.run (until isDigit) ['a', 'b', '3'] == Ok ['a', 'b']
+expect Parser.run (until isDigit) ['3', 'b'] |> Result.isErr
 
 isDigit : U8 -> Bool
 isDigit = \c -> c >= '0' && c <= '9'

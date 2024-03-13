@@ -118,17 +118,3 @@ isWhitespace = \c ->
     when c is
         0x0020 | 0x000A | 0x000D | 0x0009 -> Bool.true
         _ -> Bool.false
-
-skipWhitespaces = \input ->
-    count =
-        input
-        |> List.walkUntil 0 \i, c ->
-            if isWhitespace c then
-                Continue (i + 1)
-            else
-                Break i
-
-    rest = List.dropFirst input count
-    Ok (rest, {})
-
-expect skipWhitespaces (Str.toUtf8 "  \t\nhi") == Ok (['h', 'i'], {})
